@@ -129,6 +129,7 @@ body {
     <div class="option" data-src="neca.png">NecA's Map</div>
     <div class="option" data-src="neca_label.png">NecA's Map (No Labels)</div>
     <div class="option" data-src="neca_terrain.png">NecA's Terrain</div>
+    <div class="option" data-src="jay.png">JayKobious's Map</div>
 
     <div class="sectionTitle" style="margin-top:10px;">Terrain</div>
     <div class="toggle" id="chunkToggle">Chunks: OFF</div>
@@ -172,7 +173,6 @@ let showChunks = false
 let paintMode = false
 
 let imageWidth = 8192, imageHeight = 8192, coordMultiplier = 1
-const MAX_CHUNKS_ON_SCREEN = 2500
 
 function resizeCanvases() {
     chunkCanvas.width = window.innerWidth
@@ -186,7 +186,7 @@ resizeCanvases()
 map.onload = () => {
     imageWidth = map.naturalWidth
     imageHeight = map.naturalHeight
-    coordMultiplier = map.src.includes("neca") ? 2 : 1
+    coordMultiplier = map.src.includes("neca") || map.src.includes("jay") ? 2 : 1
 }
 
 function parseColor() {
@@ -199,8 +199,9 @@ function parseColor() {
     colorPreview.style.background = color
     return color
 }
+
 let currentColor = parseColor()
-colorInput.addEventListener("input", () => currentColor=parseColor())
+colorInput.addEventListener("input", () => currentColor = parseColor())
 
 container.addEventListener("mousemove", e => {
     mouseX = e.clientX
@@ -236,12 +237,16 @@ document.addEventListener("mouseup", () => { dragging = false; painting = false 
 document.addEventListener("wheel", e => {
     e.preventDefault()
     const rect = container.getBoundingClientRect()
-    const mx = mouseX - rect.left, my = mouseY - rect.top
+    const mx = mouseX - rect.left
+    const my = mouseY - rect.top
+
     const worldX = (mx - posX) / scale
     const worldY = (my - posY) / scale
+
     const zoomFactor = 1 - e.deltaY * zoomSpeed
     targetScale *= zoomFactor
     scale += (targetScale - scale) * 0.25
+
     posX = mx - worldX * scale
     posY = my - worldY * scale
 }, { passive: false })
@@ -256,94 +261,118 @@ function updateMovement() {
     if (keys["s"]) velY -= accel
     if (keys["a"]) velX += accel
     if (keys["d"]) velX -= accel
-    velX *= friction; velY *= friction
-    posX += velX; posY += velY
+    velX *= friction
+    velY *= friction
+    posX += velX
+    posY += velY
 }
 
 function screenToWorld(x, y) {
     const rect = container.getBoundingClientRect()
-    return { x: (x - rect.left - posX)/scale, y: (y - rect.top - posY)/scale }
+    return {
+        x: (x - rect.left - posX) / scale,
+        y: (y - rect.top - posY) / scale
+    }
 }
 
 function paintChunkAt(x, y) {
     const world = screenToWorld(x, y)
     const chunkX = Math.floor(world.x / chunkSize)
     const chunkY = Math.floor(world.y / chunkSize)
-    paintedChunks.set(chunkX+","+chunkY, currentColor)
+    paintedChunks.set(chunkX + "," + chunkY, currentColor)
 }
 
 function drawChunks() {
-    chunkCtx.clearRect(0,0,chunkCanvas.width,chunkCanvas.height)
+    chunkCtx.clearRect(0, 0, chunkCanvas.width, chunkCanvas.height)
     if (!map.src.includes("terrain.png")) return
 
-    paintedChunks.forEach((paint, key)=>{
-        const [x,y]=key.split(",").map(Number)
-        const screenX=x*chunkSize*scale+posX
-        const screenY=y*chunkSize*scale+posY
-        chunkCtx.fillStyle=paint
-        chunkCtx.fillRect(screenX,screenY,chunkSize*scale,chunkSize*scale)
+    paintedChunks.forEach((paint, key) => {
+        const [x, y] = key.split(",").map(Number)
+        const screenX = x * chunkSize * scale + posX
+        const screenY = y * chunkSize * scale + posY
+        chunkCtx.fillStyle = paint
+        chunkCtx.fillRect(screenX, screenY, chunkSize * scale, chunkSize * scale)
     })
 
-    if (showChunks && scale>0.03){
+    if (showChunks && scale > 0.03) {
         const visibleX = Math.ceil(chunkCanvas.width / (chunkSize * scale))
         const visibleY = Math.ceil(chunkCanvas.height / (chunkSize * scale))
-        const startX = Math.floor((-posX)/(chunkSize*scale))
-        const startY = Math.floor((-posY)/(chunkSize*scale))
-        const endX = startX + visibleX + 2
-        const endY = startY + visibleY + 2
+        const startX = Math.floor((-posX) / (chunkSize * scale))
+        const startY = Math.floor((-posY) / (chunkSize * scale))
 
-        for(let x=startX;x<endX;x++){
-            for(let y=startY;y<endY;y++){
-                const screenX=x*chunkSize*scale+posX
-                const screenY=y*chunkSize*scale+posY
-                chunkCtx.strokeStyle="white"
-                chunkCtx.lineWidth=1
-                chunkCtx.strokeRect(Math.floor(screenX)+0.5,Math.floor(screenY)+0.5,Math.floor(chunkSize*scale),Math.floor(chunkSize*scale))
+        for (let x = startX; x < startX + visibleX + 2; x++) {
+            for (let y = startY; y < startY + visibleY + 2; y++) {
+                const screenX = x * chunkSize * scale + posX
+                const screenY = y * chunkSize * scale + posY
+                chunkCtx.strokeStyle = "white"
+                chunkCtx.lineWidth = 1
+                chunkCtx.strokeRect(
+                    Math.floor(screenX) + 0.5,
+                    Math.floor(screenY) + 0.5,
+                    Math.floor(chunkSize * scale),
+                    Math.floor(chunkSize * scale)
+                )
             }
         }
     }
 }
 
-function drawRedBorder(){
-    uiCtx.clearRect(0,0,uiCanvas.width,uiCanvas.height)
-    const left=posX, top=posY, right=posX+imageWidth*scale, bottom=posY+imageHeight*scale
-    uiCtx.strokeStyle="red"
-    uiCtx.lineWidth=2
-    uiCtx.strokeRect(left,top,right-left,bottom-top)
-    uiCtx.strokeRect(1,1,uiCanvas.width-2,uiCanvas.height-2)
+function drawRedBorder() {
+    uiCtx.clearRect(0, 0, uiCanvas.width, uiCanvas.height)
+    const left = posX
+    const top = posY
+    const right = posX + imageWidth * scale
+    const bottom = posY + imageHeight * scale
+
+    uiCtx.strokeStyle = "red"
+    uiCtx.lineWidth = 2
+    uiCtx.strokeRect(left, top, right - left, bottom - top)
+    uiCtx.strokeRect(1, 1, uiCanvas.width - 2, uiCanvas.height - 2)
 }
 
-function updateCoords(x,y){
-    const world=screenToWorld(x,y)
-    const centeredX=Math.floor(world.x-imageWidth/2)
-    const centeredY=Math.floor(world.y-imageHeight/2)
-    coordsDisplay.textContent=`X:${Math.floor(centeredX*coordMultiplier)} Y:${Math.floor(centeredY*coordMultiplier)}`
+function updateCoords(x, y) {
+    const world = screenToWorld(x, y)
+    const centeredX = Math.floor(world.x - imageWidth / 2)
+    const centeredY = Math.floor(world.y - imageHeight / 2)
+    coordsDisplay.textContent = 
+        `X:${Math.floor(centeredX * coordMultiplier)} Y:${Math.floor(centeredY * coordMultiplier)}`
 }
 
-function render(){
+function render() {
     updateMovement()
-    map.style.transform=`translate(${posX}px,${posY}px) scale(${scale})`
+    map.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`
     drawChunks()
     drawRedBorder()
     requestAnimationFrame(render)
 }
 render()
 
-const mapsButton=document.getElementById("mapsButton")
-const mapsPanel=document.getElementById("mapsPanel")
-const chunkToggle=document.getElementById("chunkToggle")
-const paintToggle=document.getElementById("paintToggle")
+const mapsButton = document.getElementById("mapsButton")
+const mapsPanel = document.getElementById("mapsPanel")
+const chunkToggle = document.getElementById("chunkToggle")
+const paintToggle = document.getElementById("paintToggle")
 
-mapsButton.onclick=()=>{mapsPanel.style.display=mapsPanel.style.display==="none"?"block":"none"}
-document.querySelectorAll(".option").forEach(option=>{
-    option.onclick=()=>{
-        map.src=option.dataset.src
+mapsButton.onclick = () => {
+    mapsPanel.style.display = mapsPanel.style.display === "none" ? "block" : "none"
+}
+
+document.querySelectorAll(".option").forEach(option => {
+    option.onclick = () => {
+        map.src = option.dataset.src
         paintedChunks.clear()
-        mapsPanel.style.display="none"
+        mapsPanel.style.display = "none"
     }
 })
-chunkToggle.onclick=()=>{showChunks=!showChunks; chunkToggle.textContent=showChunks?"Chunks: ON":"Chunks: OFF"}
-paintToggle.onclick=()=>{paintMode=!paintMode; paintToggle.textContent=paintMode?"Paint Mode: ON":"Paint Mode: OFF"}
+
+chunkToggle.onclick = () => {
+    showChunks = !showChunks
+    chunkToggle.textContent = showChunks ? "Chunks: ON" : "Chunks: OFF"
+}
+
+paintToggle.onclick = () => {
+    paintMode = !paintMode
+    paintToggle.textContent = paintMode ? "Paint Mode: ON" : "Paint Mode: OFF"
+}
 </script>
 
 </body>
