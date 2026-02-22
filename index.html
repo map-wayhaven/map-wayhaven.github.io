@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DYNMAP — Territory Intelligence</title>
+    <title>Alazon — Territory Intelligence</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700&family=Syne:wght@400;600;700;800&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -135,14 +135,14 @@
 
 <body>
     <div id="ldo">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;letter-spacing:.14em;color:#00d4ff;text-transform:uppercase">⬡ DYNMAP</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;letter-spacing:.14em;color:#00d4ff;text-transform:uppercase">⬡ Alazon</div>
         <div class="lbw">
             <div class="lb"></div>
         </div>
         <div class="lt">Loading territory data…</div>
     </div>
     <div id="topbar">
-        <div id="topbar-logo">⬡ DYNMAP</div>
+        <div id="topbar-logo">⬡ Alazon</div>
         <div id="topbar-stats">
             <div class="ts"><span>Lands</span><span class="tsv" id="ts-l">—</span></div>
             <div class="ts"><span>Nations</span><span class="tsv" id="ts-n">—</span></div>
@@ -248,10 +248,6 @@
                     <button class="mtbtn on" id="mtb-l" title="Lands">⬡</button>
                     <button class="mtbtn on" id="mtb-n" title="Nation Labels">⚑</button>
                     <button class="mtbtn" id="mtb-r" title="Reset">⊙</button>
-                </div>
-                <div id="mleg">
-                    <div id="mleg-t">Nations</div>
-                    <div id="mleg-b"></div>
                 </div>
                 <div id="mtt">
                     <div class="ttn" id="mtt-n"></div>
@@ -716,7 +712,6 @@
           setTimeout(doMapFocus, 300);
         }
         
-        function buildMLegend(){const b=document.getElementById('mleg-b');const ns=Object.keys(S.nations).sort();b.innerHTML=ns.slice(0,12).map(n=>`<div class="legi"><div class="legd" style="background:${getNC(n)}"></div>${n}</div>`).join('');if(ns.length>12)b.insertAdjacentHTML('beforeend',`<div style="color:var(--text2);font-size:9px;margin-top:3px">+${ns.length-12} more</div>`);}
         
         function doMapFocus(){
           const ms = S.mapState;
